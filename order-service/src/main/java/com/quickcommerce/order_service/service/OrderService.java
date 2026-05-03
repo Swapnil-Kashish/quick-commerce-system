@@ -1,6 +1,8 @@
 package com.quickcommerce.order_service.service;
 
 import com.quickcommerce.order_service.entity.Order;
+import com.quickcommerce.order_service.kafka.OrderEvent;
+import com.quickcommerce.order_service.kafka.OrderProducer;
 import com.quickcommerce.order_service.webclient.InventoryClient;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.AllArgsConstructor;
@@ -18,20 +20,20 @@ public class OrderService {
     @Autowired
     private InventoryClient inventoryClient;
 
+    private OrderProducer orderProducer;
 
     @CircuitBreaker(name = "inventoryService", fallbackMethod = "fallbackOrder")
     public Order createOrder(Order order) {
 
-        String url = "http://localhost:8082/inventory/check?productId="
-                + order.getProductId() + "&quantity=" + order.getQuantity();
-        System.out.println("👉 Calling Inventory Service...");
-        Boolean inStock = inventoryClient.checkInventory(url);
-        if (Boolean.FALSE.equals(inStock)) {
-            order.setStatus("FAILED");
-            return order;
-        }
-        order.setStatus("SUCCESS");
+        System.out.println("📤 Sending order to Kafka...");
+        OrderEvent event = new OrderEvent(
+                order.getProductId(),
+                order.getQuantity()
+        );
+        orderProducer.sendOrder(event);
+        order.setStatus("PROCESSING");
         return order;
+
     }
     public Order fallbackOrder(Order order, Exception ex) {
 
