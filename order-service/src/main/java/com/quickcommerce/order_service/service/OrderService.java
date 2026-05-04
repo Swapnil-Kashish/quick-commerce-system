@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.UUID;
+
 @AllArgsConstructor
 @Service
 public class OrderService {
@@ -24,16 +26,16 @@ public class OrderService {
 
     @CircuitBreaker(name = "inventoryService", fallbackMethod = "fallbackOrder")
     public Order createOrder(Order order) {
-
         System.out.println("📤 Sending order to Kafka...");
-        OrderEvent event = new OrderEvent(
-                order.getProductId(),
-                order.getQuantity()
-        );
+        OrderEvent event = new OrderEvent();
+        // 🔥 ALWAYS generate internally
+        event.setEventId(UUID.randomUUID().toString());
+        event.setProductId(order.getProductId());
+        event.setQuantity(order.getQuantity());
+        System.out.println("📤 Sending eventId: " + event.getEventId());
         orderProducer.sendOrder(event);
         order.setStatus("PROCESSING");
         return order;
-
     }
     public Order fallbackOrder(Order order, Exception ex) {
 

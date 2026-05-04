@@ -10,6 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class OrderEvent {
+    private String eventId;
     private Long productId;
     private int quantity;
 }
