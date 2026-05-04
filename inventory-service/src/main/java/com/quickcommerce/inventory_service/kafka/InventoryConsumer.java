@@ -35,11 +35,9 @@ public class InventoryConsumer {
     @KafkaListener(topics = "order-topic", groupId = "inventory-group")
     public void consume(OrderEvent event) {
         String eventId = event.getEventId();
-        // 🔥 Defensive check
         if (eventId == null) {
             throw new IllegalArgumentException("EventId is missing!");
         }
-        // 🔥 IDEMPOTENCY CHECK (FIRST THING)
         if (processedEvents.contains(eventId)) {
             System.out.println("⚠️ Duplicate event ignored: " + eventId);
             return;
@@ -51,13 +49,10 @@ public class InventoryConsumer {
             System.out.println("❌ Out of stock!");
             throw new IllegalStateException("Stock not available"); // triggers retry
         }
-        // 🔥 BUSINESS LOGIC (SIDE EFFECT)
         inventory.put(event.getProductId(), available - event.getQuantity());
-        // 🔥 MARK AS PROCESSED ONLY AFTER SUCCESS
         processedEvents.add(eventId);
         System.out.println("✅ Inventory updated. Remaining: " +
                 inventory.get(event.getProductId()));
-        // send success response
         InventoryResponseEvent response = new InventoryResponseEvent(
                 event.getProductId(),
                 true,
