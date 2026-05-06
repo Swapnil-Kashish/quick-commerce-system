@@ -24,6 +24,9 @@ public class OrderService {
 
     private OrderProducer orderProducer;
 
+    @Autowired
+    private OrderStatusStore orderStatusStore;
+
     @CircuitBreaker(name = "inventoryService", fallbackMethod = "fallbackOrder")
     public Order createOrder(Order order) {
         System.out.println("📤 Sending order to Kafka...");
@@ -32,6 +35,11 @@ public class OrderService {
         event.setEventId(UUID.randomUUID().toString());
         event.setProductId(order.getProductId());
         event.setQuantity(order.getQuantity());
+        order.setEventId(event.getEventId());
+        orderStatusStore.updateStatus(
+                event.getEventId(),
+                "PROCESSING"
+        );
         System.out.println("📤 Sending eventId: " + event.getEventId());
         orderProducer.sendOrder(event);
         order.setStatus("PROCESSING");

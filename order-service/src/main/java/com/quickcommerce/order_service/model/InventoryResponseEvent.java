@@ -12,6 +12,7 @@ import lombok.Setter;
 @Setter
 public class InventoryResponseEvent {
 
+    private String eventId;
     private Long productId;
     private boolean inStock;
     private String status;
