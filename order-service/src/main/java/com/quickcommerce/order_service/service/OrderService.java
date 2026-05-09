@@ -3,6 +3,7 @@ package com.quickcommerce.order_service.service;
 import com.quickcommerce.order_service.entity.Order;
 import com.quickcommerce.order_service.kafka.OrderEvent;
 import com.quickcommerce.order_service.kafka.OrderProducer;
+import com.quickcommerce.order_service.repository.OrderRepository;
 import com.quickcommerce.order_service.webclient.InventoryClient;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.AllArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -25,30 +27,41 @@ public class OrderService {
     private OrderProducer orderProducer;
 
     @Autowired
-    private OrderStatusStore orderStatusStore;
+    private OrderRepository orderRepository;
 
-    @CircuitBreaker(name = "inventoryService", fallbackMethod = "fallbackOrder")
+    @CircuitBreaker(
+            name = "inventoryService",
+            fallbackMethod = "fallbackOrder"
+    )
     public Order createOrder(Order order) {
         System.out.println("📤 Sending order to Kafka...");
         OrderEvent event = new OrderEvent();
-        // 🔥 ALWAYS generate internally
         event.setEventId(UUID.randomUUID().toString());
         event.setProductId(order.getProductId());
         event.setQuantity(order.getQuantity());
         order.setEventId(event.getEventId());
-        orderStatusStore.updateStatus(
-                event.getEventId(),
-                "PROCESSING"
-        );
-        System.out.println("📤 Sending eventId: " + event.getEventId());
-        orderProducer.sendOrder(event);
         order.setStatus("PROCESSING");
-        return order;
+        order.setCreatedAt(LocalDateTime.now());
+        Order savedOrder = orderRepository.save(order);
+        System.out.println(
+                "📤 Sending eventId: " + event.getEventId()
+        );
+        orderProducer.sendOrder(event);
+        return savedOrder;
     }
+
     public Order fallbackOrder(Order order, Exception ex) {
 
         System.out.println("⚠️ Circuit Breaker Activated! Inventory service unavailable.");
         order.setStatus("FAILED");
         return order;
+    }
+
+    public String getOrderStatus(String eventId) {
+
+        return orderRepository
+                .findByEventId(eventId)
+                .map(Order::getStatus)
+                .orElse("NOT_FOUND");
     }
 }

@@ -1,28 +1,29 @@
 package com.quickcommerce.inventory_service.controller;
 
+import com.quickcommerce.inventory_service.entity.Inventory;
+import com.quickcommerce.inventory_service.repository.InventoryRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/inventory")
 public class InventoryController {
 
-    private Map<Long, Integer> stock = new HashMap<>();
+    @Autowired
+    private InventoryRepository inventoryRepository;
 
-    @PostMapping("/add")
-    public void addStock(@RequestParam Long productId,
-                         @RequestParam int quantity) {
-
-        stock.put(productId,
-                stock.getOrDefault(productId, 0) + quantity);
+    @PostMapping
+    public Inventory saveInventory(@RequestBody Inventory inventory) {
+        return inventoryRepository.save(inventory);
     }
 
-    @GetMapping("/check")
-    public boolean checkStock(@RequestParam Long productId,
-                              @RequestParam int quantity) {
-
-        return stock.getOrDefault(productId, 0) >= quantity;
+    @GetMapping("/{productId}")
+    public Inventory getInventory(@PathVariable Long productId) {
+        return inventoryRepository
+                .findById(productId)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Product not found"
+                        ));
     }
 }
