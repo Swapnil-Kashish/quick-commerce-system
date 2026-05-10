@@ -88,9 +88,7 @@ public class InventoryConsumer {
                             "FAILED"
                     );
             saveOutboxEvent(response, eventId);
-            throw new IllegalStateException(
-                    "Stock not available"
-            );
+            return;
         }
         // ✅ Update inventory in DB
         inventory.setAvailableQuantity(
