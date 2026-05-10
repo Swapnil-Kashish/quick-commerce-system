@@ -1,9 +1,12 @@
 package com.quickcommerce.inventory_service.kafka;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quickcommerce.inventory_service.entity.Inventory;
+import com.quickcommerce.inventory_service.entity.OutboxEvent;
 import com.quickcommerce.inventory_service.entity.ProcessedEvent;
 import com.quickcommerce.inventory_service.model.InventoryResponseEvent;
 import com.quickcommerce.inventory_service.repository.InventoryRepository;
+import com.quickcommerce.inventory_service.repository.OutboxEventRepository;
 import com.quickcommerce.inventory_service.repository.ProcessedEventRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +14,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 public class InventoryConsumer {
@@ -22,6 +27,12 @@ public class InventoryConsumer {
 
     @Autowired
     private InventoryRepository inventoryRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private OutboxEventRepository outboxEventRepository;
 
     public InventoryConsumer(InventoryProducer inventoryProducer) {
         this.inventoryProducer = inventoryProducer;
@@ -76,7 +87,7 @@ public class InventoryConsumer {
                             false,
                             "FAILED"
                     );
-            inventoryProducer.sendResponse(response);
+            saveOutboxEvent(response, eventId);
             throw new IllegalStateException(
                     "Stock not available"
             );
@@ -102,11 +113,42 @@ public class InventoryConsumer {
                         true,
                         "SUCCESS"
                 );
-        inventoryProducer.sendResponse(response);
+        saveOutboxEvent(response, eventId);
     }
 
     @KafkaListener(topics = "order-topic-dlt", groupId = "inventory-dlt-group")
     public void consumeDLQ(OrderEvent event) {
         System.out.println("💀 Message moved to DLQ: " + event.getProductId());
+    }
+
+    private void saveOutboxEvent(
+            InventoryResponseEvent response,
+            String eventId
+    ) {
+        try {
+            OutboxEvent outboxEvent =
+                    new OutboxEvent();
+            outboxEvent.setEventId(eventId);
+            outboxEvent.setTopic(
+                    "inventory-response-topic"
+            );
+            outboxEvent.setPayload(
+                    objectMapper.writeValueAsString(
+                            response
+                    )
+            );
+            outboxEvent.setPublished(false);
+            outboxEvent.setCreatedAt(
+                    LocalDateTime.now()
+            );
+            outboxEventRepository.save(outboxEvent);
+            System.out.println(
+                    "📦 Outbox event saved"
+            );
+        } catch (Exception ex) {
+            throw new RuntimeException(
+                    "Failed to save outbox event"
+            );
+        }
     }
 }
