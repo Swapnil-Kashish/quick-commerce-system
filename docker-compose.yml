@@ -40,6 +40,7 @@ services:
     depends_on:
       - postgres
       - kafka
+      - discovery-server
     ports:
       - "8081:8081"
     environment:
@@ -54,6 +55,7 @@ services:
     depends_on:
       - postgres
       - kafka
+      - discovery-server
     ports:
       - "8082:8082"
     environment:
@@ -62,12 +64,19 @@ services:
       SPRING_DATASOURCE_PASSWORD: admin
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
+  discovery-server:
+    image: discovery-server
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+
   gateway-service:
     image: gateway-service
     container_name: gateway-service
     depends_on:
       - order-service
       - inventory-service
+      - discovery-server
     ports:
       - "8080:8080"
 

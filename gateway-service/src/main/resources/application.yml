@@ -6,12 +6,12 @@ spring:
     gateway:
       routes:
         - id: order-service
-          uri: http://order-service:8081
+          uri: lb://ORDER-SERVICE
           predicates:
             - Path=/orders,/orders/**
 
         - id: inventory-service
-          uri: http://inventory-service:8082
+          uri: lb://INVENTORY-SERVICE
           predicates:
             - Path=/inventory,/inventory/**
 
