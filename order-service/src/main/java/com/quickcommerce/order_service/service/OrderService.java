@@ -1,10 +1,11 @@
 package com.quickcommerce.order_service.service;
 
+import com.quickcommerce.order_service.dto.InventoryResponse;
 import com.quickcommerce.order_service.entity.Order;
 import com.quickcommerce.order_service.kafka.OrderEvent;
 import com.quickcommerce.order_service.kafka.OrderProducer;
 import com.quickcommerce.order_service.repository.OrderRepository;
-import com.quickcommerce.order_service.webclient.InventoryClient;
+import com.quickcommerce.order_service.client.InventoryClient;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,14 @@ public class OrderService {
             fallbackMethod = "fallbackOrder"
     )
     public Order createOrder(Order order) {
+        InventoryResponse response =
+                inventoryClient.checkInventory(
+                        order.getProductId(),
+                        order.getQuantity()
+                );
+        if (!response.isInStock()) {
+            throw new RuntimeException("Product out of stock");
+        }
         System.out.println("📤 Sending order to Kafka...");
         OrderEvent event = new OrderEvent();
         event.setEventId(UUID.randomUUID().toString());
@@ -51,7 +60,6 @@ public class OrderService {
     }
 
     public Order fallbackOrder(Order order, Exception ex) {
-
         System.out.println("⚠️ Circuit Breaker Activated! Inventory service unavailable.");
         order.setStatus("FAILED");
         return order;
