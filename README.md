@@ -1,137 +1,429 @@
 # 🚀 Quick Commerce System (Microservices)
 
-A distributed backend system simulating a quick commerce platform (like Blinkit / Swiggy Instamart), built using Spring Boot microservices architecture with focus on scalability, fault tolerance, and system design principles.
+A distributed backend system simulating a quick commerce platform (like Blinkit / Swiggy Instamart), built using modern microservices architecture with focus on scalability, resilience, observability, and distributed system design principles.
 
 ---
 
-## 🧠 Overview
+# 🧠 Overview
 
-This project demonstrates how real-world backend systems are designed using:
+This project demonstrates how production-grade backend systems are designed using:
 
-- Microservices architecture  
-- Service-to-service communication  
-- Failure handling & resilience  
-- Distributed system design concepts  
-
----
-
-## 🧩 Architecture
-
-Client → Order Service → Inventory Service
-
-- Order Service communicates with Inventory Service using REST APIs  
-- Implements retry, timeout, and failure handling  
-- Designed to evolve into event-driven architecture (Kafka)
+- Microservices architecture
+- Distributed communication patterns
+- Event-driven systems using Kafka
+- Service discovery
+- API Gateway routing
+- Fault tolerance & resilience
+- Monitoring & centralized logging
+- Containerized infrastructure
 
 ---
 
-## ⚙️ Tech Stack
+# 🏗️ System Architecture
 
-- Java 17+
-- Spring Boot
-- REST APIs
-- Maven
-- Docker (for future integrations)
-- PostgreSQL (planned)
-- Resilience4j (upcoming)
-- Kafka (upcoming)
+```text
+                    ┌──────────────────┐
+                    │      Client      │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                 ┌─────────────────────┐
+                 │    API Gateway      │
+                 │  (Spring Gateway)   │
+                 └────────┬────────────┘
+                          │
+          ┌───────────────┴────────────────┐
+          ▼                                ▼
+┌──────────────────┐             ┌──────────────────┐
+│  Order Service   │◄──────────►│ Inventory Service │
+└────────┬─────────┘   Feign     └──────────────────┘
+         │
+         ▼
+┌──────────────────┐
+│      Kafka       │
+└──────────────────┘
 
----
-
-## 📦 Services
-
-### 🧾 Order Service
-- Handles order creation  
-- Calls Inventory Service to validate stock  
-- Implements:
-  - Retry mechanism  
-  - Timeout handling  
-  - Graceful failure handling  
-
----
-
-### 📦 Inventory Service
-- Manages product stock  
-- Provides APIs to:
-  - Add inventory  
-  - Check availability  
-
----
-
-## 🔥 Features Implemented
-
-- ✅ Microservices-based architecture  
-- ✅ REST communication between services  
-- ✅ Retry mechanism (manual implementation)  
-- ✅ Timeout handling  
-- ✅ Fault tolerance using try-catch  
-- ✅ Basic logging for observability  
+         ▲
+         │
+┌──────────────────┐
+│ Discovery Server │
+│     (Eureka)     │
+└──────────────────┘
+```
 
 ---
 
-## 💣 System Design Concepts Covered
+# ⚙️ Tech Stack
 
-- Synchronous communication (REST)  
-- Retry strategy  
-- Timeout management  
-- Fault tolerance  
-- Graceful degradation  
-- Handling transient vs permanent failures  
-
----
-
-## 🚀 Upcoming Enhancements
-
-- 🔁 Circuit Breaker (Resilience4j)  
-- 📩 Event-driven architecture using Kafka  
-- ⚡ Redis caching  
-- 🌐 API Gateway  
-- 🔍 Elasticsearch for search optimization  
-- 🐳 Docker Compose for full system setup  
+## Backend
+- Java 21
+- Spring Boot 3
+- Spring Cloud
+- Spring Data JPA
+- Spring Cloud Gateway
+- OpenFeign
+- Resilience4j
 
 ---
 
-## ▶️ How to Run
-
-### 1. Start Inventory Service
-cd inventory-service ./mvnw spring-boot:run
-
-### 2. Start Order Service
-cd order-service ./mvnw spring-boot:run
+## Messaging
+- Apache Kafka
+- Zookeeper
 
 ---
 
-## 🧪 API Testing
+## Database
+- PostgreSQL
 
-### Add Inventory
-POST /inventory/add?productId=1&quantity=10
+---
 
-### Check Inventory
+## Infrastructure & DevOps
+- Docker
+- Docker Compose
+
+---
+
+## Monitoring & Observability
+- Spring Boot Actuator
+- Prometheus
+- Grafana
+- Loki
+- Promtail
+
+---
+
+# 🧩 Microservices
+
+## 🧾 Order Service
+
+Responsible for:
+- order creation
+- inventory validation
+- event publishing
+- retry/fallback handling
+
+### Features
+- OpenFeign communication
+- Circuit Breaker
+- Retry mechanism
+- Fallback handling
+- Kafka producer
+- PostgreSQL persistence
+
+---
+
+## 📦 Inventory Service
+
+Responsible for:
+- inventory management
+- stock validation
+- inventory event handling
+
+### Features
+- inventory APIs
+- stock validation
+- Kafka consumer
+- PostgreSQL persistence
+
+---
+
+## 🌐 API Gateway
+
+Built using Spring Cloud Gateway.
+
+### Features
+- centralized routing
+- single entry point
+- service discovery integration
+- scalable entry point for clients
+
+---
+
+## 🔍 Discovery Server (Eureka)
+
+Responsible for:
+- service registration
+- service discovery
+- dynamic routing support
+
+---
+
+# 🔥 Features Implemented
+
+## ✅ Microservices Architecture
+- independently deployable services
+- service isolation
+- distributed communication
+
+---
+
+## ✅ API Gateway
+- centralized routing
+- single entry point
+- scalable API access
+
+---
+
+## ✅ Service Discovery
+- Eureka-based dynamic registration
+- automatic service lookup
+
+---
+
+## ✅ OpenFeign Communication
+- synchronous inter-service REST communication
+- declarative HTTP clients
+
+---
+
+## ✅ Fault Tolerance & Resilience
+Implemented using Resilience4j:
+- Circuit Breaker
+- Retry
+- Fallback handling
+
+---
+
+## ✅ Kafka Event Streaming
+- asynchronous event-driven communication
+- order event publishing
+- inventory event consumption
+
+---
+
+## ✅ Dockerized Infrastructure
+Containerized services:
+- PostgreSQL
+- Kafka
+- Zookeeper
+- Gateway
+- Eureka
+- Microservices
+
+---
+
+## ✅ Monitoring & Observability
+
+### Spring Boot Actuator
+- health checks
+- metrics
+- circuit breaker metrics
+
+### Prometheus
+- metrics scraping
+- monitoring
+
+### Grafana
+- real-time dashboards
+- JVM metrics
+- HTTP metrics
+- resilience metrics
+
+### Loki + Promtail
+- centralized log aggregation
+- live log streaming
+- container log monitoring
+
+---
+
+# 📊 Observability Stack
+
+```text
+                 ┌────────────┐
+                 │ Prometheus │
+                 └─────┬──────┘
+                       │
+                 ┌─────▼──────┐
+                 │  Grafana   │
+                 └─────┬──────┘
+                       │
+          ┌────────────┴────────────┐
+          ▼                         ▼
+   Metrics Monitoring        Centralized Logs
+                                    │
+                               ┌────▼────┐
+                               │  Loki   │
+                               └────┬────┘
+                                    │
+                               ┌────▼────┐
+                               │Promtail │
+                               └─────────┘
+```
+
+---
+
+# 🐳 Infrastructure Setup
+
+Services running via Docker Compose:
+
+- PostgreSQL
+- Kafka
+- Zookeeper
+- Eureka Discovery Server
+- API Gateway
+- Order Service
+- Inventory Service
+- Prometheus
+- Grafana
+- Loki
+- Promtail
+
+---
+
+# ▶️ How to Run
+
+## 1. Clone Repository
+
+```bash
+git clone <repo-url>
+cd quick-commerce-system
+```
+
+---
+
+## 2. Build Services
+
+```bash
+mvn clean install -DskipTests
+```
+
+---
+
+## 3. Start Entire System
+
+```bash
+docker compose up -d
+```
+
+---
+
+# 🌐 Service URLs
+
+| Service | URL |
+|---|---|
+| Gateway | http://localhost:8080 |
+| Order Service | http://localhost:8081 |
+| Inventory Service | http://localhost:8082 |
+| Eureka Dashboard | http://localhost:8761 |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3000 |
+
+---
+
+# 🧪 API Testing
+
+## Add Inventory
+
+```http
+POST /inventory
+```
+
+Request Body:
+
+```json
+{
+  "productId": 1,
+  "availableQuantity": 10
+}
+```
+
+---
+
+## Check Inventory
+
+```http
 GET /inventory/check?productId=1&quantity=5
-
-### Create Order
-POST /orders {   "productId": 1,   "quantity": 2 }
+```
 
 ---
 
-## 🧠 Learning Outcome
+## Create Order
 
-This project focuses on building production-ready backend systems with emphasis on:
+```http
+POST /orders
+```
 
-- Distributed system design  
-- Microservices communication patterns  
-- Failure handling strategies  
-- Scalability and resilience  
+Request Body:
+
+```json
+{
+  "productId": 1,
+  "quantity": 2
+}
+```
 
 ---
 
-## 👨‍💻 Author
+# 📈 Monitoring Dashboards
 
-Swapnil  
-Backend Engineer | Java | Spring Boot | Microservices  
+Implemented dashboards for:
+- JVM memory usage
+- HTTP request metrics
+- Circuit breaker metrics
+- CPU usage
+- Live threads
+- Centralized logs
 
 ---
 
-## ⭐ If you like this project
+# 🔐 Upcoming Enhancements
 
-Give it a ⭐ on GitHub and follow for more system design implementatio
+## 🚀 Security
+- Spring Security
+- JWT Authentication
+- Role-based authorization
+- Gateway authentication filter
+
+---
+
+## 🚀 Additional Microservices
+- User Service
+- Payment Service
+- Notification Service
+- Product Catalog Service
+
+---
+
+## 🚀 Advanced Infrastructure
+- Redis caching
+- Kubernetes deployment
+- CI/CD pipelines
+- GitHub Actions
+- Jenkins
+
+---
+
+## 🚀 Advanced Distributed Systems
+- Saga Pattern
+- CQRS
+- Event Sourcing
+- Distributed tracing
+- OpenTelemetry
+
+---
+
+# 🧠 Learning Outcomes
+
+This project focuses on production-grade backend engineering concepts:
+
+- Microservices communication
+- Distributed system design
+- Event-driven architecture
+- Fault tolerance & resilience
+- Monitoring & observability
+- Centralized logging
+- Containerized infrastructure
+- Scalable backend architecture
+
+---
+
+# 👨‍💻 Author
+
+Swapnil Kashish  
+Backend Engineer | Java | Spring Boot | Microservices
+
+---
+
+# ⭐ If you like this project
+
+Give it a ⭐ on GitHub and follow for more backend engineering and distributed systems implementations.
