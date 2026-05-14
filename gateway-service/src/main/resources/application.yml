@@ -15,5 +15,10 @@ spring:
           predicates:
             - Path=/inventory,/inventory/**
 
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/auth/**,/profile/**
+
 server:
   port: 8080

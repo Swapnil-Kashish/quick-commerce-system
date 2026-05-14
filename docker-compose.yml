@@ -80,6 +80,34 @@ services:
     ports:
       - "8080:8080"
 
+  user-service:
+    image: user-service
+    container_name: user-service
+    depends_on:
+      - postgres
+      - discovery-server
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/quickcommerce
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin
+
+  payment-service:
+    image: payment-service
+    container_name: payment-service
+    depends_on:
+      - postgres
+      - kafka
+      - discovery-server
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/quickcommerce
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
   prometheus:
     image: prom/prometheus
     container_name: prometheus
