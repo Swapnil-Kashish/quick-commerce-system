@@ -30,30 +30,70 @@ public class OrderService {
     @Autowired
     private OrderRepository orderRepository;
 
-    @CircuitBreaker(
-            name = "inventoryService",
-            fallbackMethod = "fallbackOrder"
-    )
+//    @CircuitBreaker(
+//            name = "inventoryService",
+//            fallbackMethod = "fallbackOrder"
+//    )
+//    public Order createOrder(Order order) {
+//        InventoryResponse response =
+//                inventoryClient.checkInventory(
+//                        order.getProductId(),
+//                        order.getQuantity()
+//                );
+//        if (!response.isInStock()) {
+//            throw new RuntimeException("Product out of stock");
+//        }
+//        System.out.println("📤 Sending order to Kafka...");
+//        OrderEvent event = new OrderEvent();
+//        event.setEventId(UUID.randomUUID().toString());
+//        event.setProductId(order.getProductId());
+//        event.setQuantity(order.getQuantity());
+//        order.setEventId(event.getEventId());
+//        order.setStatus("PROCESSING");
+//        order.setCreatedAt(LocalDateTime.now());
+//        Order savedOrder = orderRepository.save(order);
+//        System.out.println(
+//                "📤 Sending eventId: " + event.getEventId()
+//        );
+//        orderProducer.sendOrder(event);
+//        return savedOrder;
+//    }
+
     public Order createOrder(Order order) {
-        InventoryResponse response =
-                inventoryClient.checkInventory(
-                        order.getProductId(),
-                        order.getQuantity()
-                );
-        if (!response.isInStock()) {
-            throw new RuntimeException("Product out of stock");
-        }
+
         System.out.println("📤 Sending order to Kafka...");
         OrderEvent event = new OrderEvent();
-        event.setEventId(UUID.randomUUID().toString());
-        event.setProductId(order.getProductId());
-        event.setQuantity(order.getQuantity());
-        order.setEventId(event.getEventId());
-        order.setStatus("PROCESSING");
-        order.setCreatedAt(LocalDateTime.now());
-        Order savedOrder = orderRepository.save(order);
+
+        event.setEventId(
+                UUID.randomUUID().toString()
+        );
+
+        event.setProductId(
+                order.getProductId()
+        );
+
+        event.setQuantity(
+                order.getQuantity()
+        );
+
+        order.setEventId(
+                event.getEventId()
+        );
+
+        order.setStatus(
+                "PROCESSING"
+        );
+
+        order.setCreatedAt(
+                LocalDateTime.now()
+        );
+
+        Order savedOrder =
+                orderRepository.save(order);
+
         System.out.println(
-                "📤 Sending eventId: " + event.getEventId()
+                "📤 Sending eventId: "
+                        + event.getEventId()
         );
         orderProducer.sendOrder(event);
         return savedOrder;

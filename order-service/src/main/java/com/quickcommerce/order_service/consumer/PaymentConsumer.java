@@ -43,9 +43,11 @@ public class PaymentConsumer {
             return;
         }
 
-        order.setStatus(
-                event.getStatus()
-        );
+        if ("FAILED".equals(event.getStatus())) {
+            order.setStatus("FAILED");
+        } else {
+            order.setStatus("PAYMENT_COMPLETED");
+        }
 
         orderRepository.save(order);
 

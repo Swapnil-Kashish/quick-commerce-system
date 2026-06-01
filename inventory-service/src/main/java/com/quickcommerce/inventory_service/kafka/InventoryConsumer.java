@@ -1,6 +1,7 @@
 package com.quickcommerce.inventory_service.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.quickcommerce.inventory_service.dto.PaymentSuccessEvent;
 import com.quickcommerce.inventory_service.entity.Inventory;
 import com.quickcommerce.inventory_service.entity.OutboxEvent;
 import com.quickcommerce.inventory_service.entity.ProcessedEvent;
@@ -9,7 +10,7 @@ import com.quickcommerce.inventory_service.repository.InventoryRepository;
 import com.quickcommerce.inventory_service.repository.OutboxEventRepository;
 import com.quickcommerce.inventory_service.repository.ProcessedEventRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.retry.annotation.Backoff;
@@ -18,25 +19,13 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
 @Service
+@RequiredArgsConstructor
 public class InventoryConsumer {
 
-    private final InventoryProducer inventoryProducer;
-
-    @Autowired
-    private ProcessedEventRepository processedEventRepository;
-
-    @Autowired
-    private InventoryRepository inventoryRepository;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private OutboxEventRepository outboxEventRepository;
-
-    public InventoryConsumer(InventoryProducer inventoryProducer) {
-        this.inventoryProducer = inventoryProducer;
-    }
+    private final InventoryRepository inventoryRepository;
+    private final ProcessedEventRepository processedEventRepository;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     @RetryableTopic(
@@ -44,16 +33,20 @@ public class InventoryConsumer {
             backoff = @Backoff(delay = 5000, multiplier = 2),
             autoCreateTopics = "true"
     )
-    @KafkaListener(topics = "order-topic", groupId = "inventory-group")
-    public void consume(OrderEvent event) {
+    @KafkaListener(
+            topics = "payment-success-topic",
+            groupId = "inventory-group"
+    )
+    public void consume(PaymentSuccessEvent event) {
+
         String eventId = event.getEventId();
-        // ✅ Validate eventId
+
         if (eventId == null) {
             throw new IllegalArgumentException(
                     "EventId is missing!"
             );
         }
-        // ✅ Idempotency check
+
         if (processedEventRepository.existsById(eventId)) {
             System.out.println(
                     "⚠️ Duplicate event ignored: "
@@ -62,24 +55,32 @@ public class InventoryConsumer {
             return;
         }
         System.out.println(
-                "📥 Received order: "
-                        + event.getProductId()
+                "💳 Payment Success Received: "
+                        + eventId
         );
-        // ✅ Fetch inventory from DB
-        Inventory inventory = inventoryRepository
-                .findById(event.getProductId())
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Product not found"
-                        ));
-        int available = inventory.getAvailableQuantity();
+
+        Inventory inventory =
+                inventoryRepository
+                        .findById(event.getProductId())
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Product not found"
+                                ));
+
+        int available =
+                inventory.getAvailableQuantity();
+
         System.out.println(
                 "📦 Available stock: "
                         + available
         );
-        // ✅ Failure scenario
+
         if (available < event.getQuantity()) {
-            System.out.println("❌ Out of stock!");
+
+            System.out.println(
+                    "❌ Out of stock!"
+            );
+
             InventoryResponseEvent response =
                     new InventoryResponseEvent(
                             eventId,
@@ -87,23 +88,33 @@ public class InventoryConsumer {
                             false,
                             "FAILED"
                     );
-            saveOutboxEvent(response, eventId);
+
+            saveOutboxEvent(
+                    response,
+                    eventId
+            );
+
             return;
         }
-        // ✅ Update inventory in DB
+
         inventory.setAvailableQuantity(
                 available - event.getQuantity()
         );
-        inventoryRepository.save(inventory);
-        // ✅ Save processed event for idempotency
+
+        inventoryRepository.save(
+                inventory
+        );
+
         processedEventRepository.save(
-                new ProcessedEvent(eventId)
+                new ProcessedEvent(
+                        eventId
+                )
         );
         System.out.println(
                 "✅ Inventory updated. Remaining: "
                         + inventory.getAvailableQuantity()
         );
-        // ✅ Send SUCCESS response
+
         InventoryResponseEvent response =
                 new InventoryResponseEvent(
                         eventId,
@@ -111,12 +122,25 @@ public class InventoryConsumer {
                         true,
                         "SUCCESS"
                 );
-        saveOutboxEvent(response, eventId);
+
+        saveOutboxEvent(
+                response,
+                eventId
+        );
     }
 
-    @KafkaListener(topics = "order-topic-dlt", groupId = "inventory-dlt-group")
-    public void consumeDLQ(OrderEvent event) {
-        System.out.println("💀 Message moved to DLQ: " + event.getProductId());
+    @KafkaListener(
+            topics = "payment-success-topic-dlt",
+            groupId = "inventory-dlt-group"
+    )
+    public void consumeDLQ(
+            PaymentSuccessEvent event
+    ) {
+
+        System.out.println(
+                "💀 Message moved to DLQ: "
+                        + event.getProductId()
+        );
     }
 
     private void saveOutboxEvent(
@@ -126,7 +150,9 @@ public class InventoryConsumer {
         try {
             OutboxEvent outboxEvent =
                     new OutboxEvent();
-            outboxEvent.setEventId(eventId);
+            outboxEvent.setEventId(
+                    eventId
+            );
             outboxEvent.setTopic(
                     "inventory-response-topic"
             );
@@ -135,11 +161,15 @@ public class InventoryConsumer {
                             response
                     )
             );
-            outboxEvent.setPublished(false);
+            outboxEvent.setPublished(
+                    false
+            );
             outboxEvent.setCreatedAt(
                     LocalDateTime.now()
             );
-            outboxEventRepository.save(outboxEvent);
+            outboxEventRepository.save(
+                    outboxEvent
+            );
             System.out.println(
                     "📦 Outbox event saved"
             );

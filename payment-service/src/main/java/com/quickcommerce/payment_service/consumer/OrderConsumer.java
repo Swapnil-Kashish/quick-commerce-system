@@ -2,8 +2,10 @@ package com.quickcommerce.payment_service.consumer;
 
 import com.quickcommerce.payment_service.dto.OrderEvent;
 import com.quickcommerce.payment_service.dto.PaymentEvent;
+import com.quickcommerce.payment_service.dto.PaymentSuccessEvent;
 import com.quickcommerce.payment_service.entity.Payment;
 import com.quickcommerce.payment_service.producer.PaymentProducer;
+import com.quickcommerce.payment_service.producer.PaymentSuccessProducer;
 import com.quickcommerce.payment_service.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -18,6 +20,8 @@ public class OrderConsumer {
     private final PaymentRepository paymentRepository;
 
     private final PaymentProducer paymentProducer;
+
+    private final PaymentSuccessProducer paymentSuccessProducer;
 
     @KafkaListener(
             topics = "order-topic",
@@ -47,5 +51,17 @@ public class OrderConsumer {
         paymentProducer.sendPaymentEvent(
                 paymentEvent
         );
+        if ("SUCCESS".equals(payment.getStatus())) {
+            PaymentSuccessEvent successEvent =
+                    new PaymentSuccessEvent(
+                            event.getEventId(),
+                            event.getProductId(),
+                            event.getQuantity(),
+                            payment.getStatus()
+                    );
+            paymentSuccessProducer
+                    .sendPaymentSuccess(successEvent);
+
+        }
     }
 }
