@@ -20,5 +20,15 @@ spring:
           predicates:
             - Path=/auth/**,/profile/**
 
+        - id: product-service
+          uri: lb://PRODUCT-SERVICE
+          predicates:
+            - Path=/products/**,/products
+
+        - id: cart-service
+          uri: lb://CART-SERVICE
+          predicates:
+            - Path=/cart/**
+
 server:
   port: 8080
