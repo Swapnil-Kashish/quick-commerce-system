@@ -3,6 +3,9 @@ package com.quickcommerce.product_service.service;
 import com.quickcommerce.product_service.entity.Product;
 import com.quickcommerce.product_service.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -24,15 +27,16 @@ public class ProductService {
         return repository.findAll();
     }
 
+    @Cacheable(value = "products", key = "#id")
     public Product getById(Long id) {
-        return repository.findById(id)
-                .orElseThrow();
+        System.out.println("🔥 DB HIT FOR PRODUCT: " + id);
+        return repository.findById(id).orElseThrow();
     }
 
+    @CachePut(value = "products", key = "#id")
     public Product update(Long id, Product request) {
 
-        Product product = repository.findById(id)
-                .orElseThrow();
+        Product product = repository.findById(id).orElseThrow();
 
         product.setName(request.getName());
         product.setDescription(request.getDescription());
@@ -43,6 +47,7 @@ public class ProductService {
         return repository.save(product);
     }
 
+    @CacheEvict(value = "products", key = "#id")
     public void delete(Long id) {
         repository.deleteById(id);
     }

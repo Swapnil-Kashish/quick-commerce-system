@@ -157,6 +157,12 @@ services:
     ports:
       - "3100:3100"
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+
   promtail:
     image: grafana/promtail:latest
     container_name: promtail
