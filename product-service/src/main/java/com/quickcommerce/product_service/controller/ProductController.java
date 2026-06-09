@@ -1,8 +1,10 @@
 package com.quickcommerce.product_service.controller;
 
+import com.quickcommerce.product_service.document.ProductDocument;
 import com.quickcommerce.product_service.entity.Product;
 import com.quickcommerce.product_service.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -48,4 +50,40 @@ public class ProductController {
 
         productService.delete(id);
     }
+
+    @GetMapping("/search")
+    public List<ProductDocument> searchProducts(
+            @RequestParam String keyword
+    ) {
+        return productService.searchProducts(keyword);
+    }
+
+    @GetMapping("/category/{category}")
+    public List<ProductDocument> searchByCategory(
+            @PathVariable String category
+    ) {
+        return productService.searchByCategory(
+                category
+        );
+    }
+
+    @GetMapping("/page")
+    public Page<ProductDocument> getProducts(
+            @RequestParam int page,
+            @RequestParam int size
+    ) {
+
+        return productService.getAllProducts(
+                page,
+                size
+        );
+    }
+
+    @GetMapping("/sort/price")
+    public List<ProductDocument> sortByPrice() {
+
+        return productService
+                .getProductsSortedByPrice();
+    }
+
 }
