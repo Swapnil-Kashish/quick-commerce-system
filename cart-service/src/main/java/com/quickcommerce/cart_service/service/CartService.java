@@ -1,10 +1,8 @@
 package com.quickcommerce.cart_service.service;
 
+import com.quickcommerce.cart_service.client.InventoryClient;
 import com.quickcommerce.cart_service.client.ProductClient;
-import com.quickcommerce.cart_service.dto.AddToCartRequest;
-import com.quickcommerce.cart_service.dto.CartItemResponse;
-import com.quickcommerce.cart_service.dto.CartResponse;
-import com.quickcommerce.cart_service.dto.ProductResponse;
+import com.quickcommerce.cart_service.dto.*;
 import com.quickcommerce.cart_service.entity.Cart;
 import com.quickcommerce.cart_service.entity.CartItem;
 import com.quickcommerce.cart_service.repository.CartItemRepository;
@@ -24,11 +22,27 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductClient productClient;
+    private final InventoryClient inventoryClient;
 
     @CachePut(value = "carts", key = "#request.userId")
     public CartResponse addToCart(AddToCartRequest request) {
 
         ProductResponse product = productClient.getProduct(request.getProductId());
+
+        InventoryRequest inventoryRequest =
+                new InventoryRequest();
+
+        inventoryRequest.setProductId(
+                request.getProductId()
+        );
+
+        inventoryRequest.setQuantity(
+                request.getQuantity()
+        );
+
+        inventoryClient.reserveStock(
+                inventoryRequest
+        );
 
         Cart cart = cartRepository.findByUserId(request.getUserId()).orElseGet(() -> {
                     Cart newCart = new Cart();
@@ -78,6 +92,25 @@ public class CartService {
     public void clearCart(Long userId) {
 
         Cart cart = cartRepository.findByUserId(userId).orElseThrow();
+
+        for (CartItem item : cart.getItems()) {
+
+            InventoryRequest request =
+                    new InventoryRequest();
+
+            request.setProductId(
+                    item.getProductId()
+            );
+
+            request.setQuantity(
+                    item.getQuantity()
+            );
+
+            inventoryClient.releaseStock(
+                    request
+            );
+        }
+
         cart.getItems().clear();
 
         cartRepository.save(cart);
