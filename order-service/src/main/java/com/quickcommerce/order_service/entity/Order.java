@@ -1,5 +1,6 @@
 package com.quickcommerce.order_service.entity;
 
+import com.quickcommerce.order_service.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,6 +18,7 @@ public class Order {
     private String eventId;
     private Long productId;
     private int quantity;
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
     private LocalDateTime createdAt;
 }

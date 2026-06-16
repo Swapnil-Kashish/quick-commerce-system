@@ -1,6 +1,7 @@
 package com.quickcommerce.order_service.kafka;
 
 import com.quickcommerce.order_service.entity.Order;
+import com.quickcommerce.order_service.enums.OrderStatus;
 import com.quickcommerce.order_service.model.InventoryResponseEvent;
 import com.quickcommerce.order_service.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,16 +23,16 @@ public class OrderConsumer {
                 .findByEventId(event.getEventId())
                 .orElseThrow(() ->
                         new RuntimeException("Order not found"));
-        String currentStatus = order.getStatus();
-        if ("SUCCESS".equals(currentStatus)
-                || "FAILED".equals(currentStatus)) {
+        OrderStatus currentStatus = order.getStatus();
+        if (currentStatus == OrderStatus.CONFIRMED
+                || currentStatus == OrderStatus.FAILED) {
             System.out.println(
                     "⚠️ Duplicate status ignored for: "
                             + event.getEventId()
             );
             return;
         }
-        order.setStatus(event.getStatus());
+        order.setStatus(OrderStatus.valueOf(event.getStatus()));
         orderRepository.save(order);
         System.out.println("📩 Inventory response received");
         System.out.println("🆔 EventId: "

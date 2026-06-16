@@ -135,6 +135,20 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: admin
 
+  delivery-service:
+    image: delivery-service
+    container_name: delivery-service
+    ports:
+      - "8088:8088"
+    depends_on:
+      - postgres
+      - discovery-server
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/quickcommerce
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
   prometheus:
     image: prom/prometheus
     container_name: prometheus

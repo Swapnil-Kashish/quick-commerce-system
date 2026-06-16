@@ -1,12 +1,11 @@
 package com.quickcommerce.order_service.service;
 
-import com.quickcommerce.order_service.dto.InventoryResponse;
 import com.quickcommerce.order_service.entity.Order;
+import com.quickcommerce.order_service.enums.OrderStatus;
 import com.quickcommerce.order_service.kafka.OrderEvent;
 import com.quickcommerce.order_service.kafka.OrderProducer;
 import com.quickcommerce.order_service.repository.OrderRepository;
 import com.quickcommerce.order_service.client.InventoryClient;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -81,7 +80,7 @@ public class OrderService {
         );
 
         order.setStatus(
-                "PROCESSING"
+                OrderStatus.PENDING
         );
 
         order.setCreatedAt(
@@ -101,7 +100,7 @@ public class OrderService {
 
     public Order fallbackOrder(Order order, Exception ex) {
         System.out.println("⚠️ Circuit Breaker Activated! Inventory service unavailable.");
-        order.setStatus("FAILED");
+        order.setStatus(OrderStatus.FAILED);
         return order;
     }
 
@@ -109,7 +108,7 @@ public class OrderService {
 
         return orderRepository
                 .findByEventId(eventId)
-                .map(Order::getStatus)
-                .orElse("NOT_FOUND");
+                .map(order -> order.getStatus().name())
+                .orElse(OrderStatus.NOT_FOUND.name());
     }
 }

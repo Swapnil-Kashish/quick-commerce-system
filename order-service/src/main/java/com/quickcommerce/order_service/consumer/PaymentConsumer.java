@@ -2,6 +2,7 @@ package com.quickcommerce.order_service.consumer;
 
 import com.quickcommerce.order_service.dto.PaymentResponseEvent;
 import com.quickcommerce.order_service.entity.Order;
+import com.quickcommerce.order_service.enums.OrderStatus;
 import com.quickcommerce.order_service.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -44,9 +45,9 @@ public class PaymentConsumer {
         }
 
         if ("FAILED".equals(event.getStatus())) {
-            order.setStatus("FAILED");
+            order.setStatus(OrderStatus.FAILED);
         } else {
-            order.setStatus("PAYMENT_COMPLETED");
+            order.setStatus(OrderStatus.PAYMENT_COMPLETED);
         }
 
         orderRepository.save(order);

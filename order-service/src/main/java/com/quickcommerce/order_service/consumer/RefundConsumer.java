@@ -2,6 +2,7 @@ package com.quickcommerce.order_service.consumer;
 
 import com.quickcommerce.order_service.dto.RefundEvent;
 import com.quickcommerce.order_service.entity.Order;
+import com.quickcommerce.order_service.enums.OrderStatus;
 import com.quickcommerce.order_service.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -29,7 +30,7 @@ public class RefundConsumer {
                         .orElseThrow();
 
         order.setStatus(
-                "REFUNDED"
+                OrderStatus.REFUNDED
         );
 
         orderRepository.save(order);
